@@ -1,0 +1,2 @@
+Taruh file audio narasi (mp3/ogg) di sini, lalu isi field
+audioSrc pada js/data-gerakan.js sesuai nama filenya.

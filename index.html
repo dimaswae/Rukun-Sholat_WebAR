@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Gerakan Sholat AR &mdash; Media Pembelajaran Augmented Reality</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+
+  <!-- ===================== SCREEN: MENU UTAMA ===================== -->
+  <main id="screen-menu" class="screen screen--active">
+    <div class="menu">
+      <div class="menu__mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="mihrab-icon">
+          <path d="M20 110 V58 Q20 20 60 20 Q100 20 100 58 V110" />
+          <path d="M20 110 H100" />
+        </svg>
+      </div>
+
+      <p class="menu__eyebrow">Media Pembelajaran &middot; Augmented Reality</p>
+      <h1 class="menu__title">Gerakan Sholat<br /><span>dalam Genggamanmu</span></h1>
+      <p class="menu__subtitle">
+        Arahkan kamera ke marker untuk melihat visualisasi 3D rangkaian gerakan
+        sholat, dari takbiratul ihram hingga salam.
+      </p>
+
+      <nav class="menu__actions">
+        <button id="btn-mulai-ar" class="btn btn--primary">
+          <span>Mulai AR</span>
+        </button>
+        <button id="btn-panduan" class="btn btn--ghost">Panduan</button>
+        <button id="btn-tentang" class="btn btn--ghost">Tentang</button>
+      </nav>
+    </div>
+  </main>
+
+  <!-- ===================== SCREEN: PANDUAN ===================== -->
+  <section id="screen-panduan" class="screen">
+    <div class="subpage">
+      <button class="btn btn--back" data-back-to-menu>&larr; Kembali</button>
+      <h2 class="subpage__title">Panduan Penggunaan</h2>
+
+      <ol class="guide-list">
+        <li>
+          <strong>Siapkan marker.</strong> Cetak gambar marker pada kertas
+          dengan ukuran minimal A5 dan permukaan rata (tidak terlipat).
+        </li>
+        <li>
+          <strong>Pastikan pencahayaan cukup.</strong> Gunakan ruangan dengan
+          cahaya merata, hindari pantulan langsung dan bayangan tajam pada marker.
+        </li>
+        <li>
+          <strong>Tekan tombol &ldquo;Mulai AR&rdquo;</strong> dan izinkan
+          akses kamera saat diminta oleh browser.
+        </li>
+        <li>
+          <strong>Arahkan kamera ke marker</strong> dengan jarak sekitar
+          20&ndash;60&nbsp;cm dan sudut kemiringan tidak lebih dari 45&deg;
+          untuk hasil deteksi terbaik.
+        </li>
+        <li>
+          <strong>Gunakan tombol navigasi</strong> (Sebelumnya / Selanjutnya)
+          di bagian bawah layar untuk berpindah antar-gerakan sholat.
+        </li>
+        <li>
+          <strong>Ketuk &ldquo;Dengarkan Narasi&rdquo;</strong> jika tersedia,
+          untuk mendengarkan penjelasan audio dari setiap gerakan.
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== SCREEN: TENTANG ===================== -->
+  <section id="screen-tentang" class="screen">
+    <div class="subpage">
+      <button class="btn btn--back" data-back-to-menu>&larr; Kembali</button>
+      <h2 class="subpage__title">Tentang Aplikasi</h2>
+      <p class="subpage__text">
+        Aplikasi ini merupakan media edukasi berbasis Augmented Reality untuk
+        memvisualisasikan rangkaian gerakan sholat secara interaktif. Dibangun
+        menggunakan MindAR sebagai mesin pelacakan marker dan Three.js sebagai
+        mesin rendering 3D berbasis WebGL, aplikasi berjalan langsung pada
+        browser tanpa memerlukan instalasi maupun lisensi komersial.
+      </p>
+      <p class="subpage__text">
+        Dikembangkan melalui pendekatan <em>Multimedia Development Life
+        Cycle</em> (MDLC) model Luther-Sutopo, sebagai kontribusi pada
+        pengembangan media pembelajaran berbasis grafika komputer yang lebih
+        konkret dan adaptif dibanding media konvensional.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== SCREEN: AR VIEW ===================== -->
+  <section id="screen-ar" class="screen">
+    <div id="ar-container" class="ar-container"></div>
+
+    <div id="ar-hint" class="ar-hint">
+      Arahkan kamera ke marker untuk menampilkan model 3D
+    </div>
+
+    <button id="btn-exit-ar" class="btn btn--icon btn--exit" aria-label="Keluar dari mode AR">
+      &times;
+    </button>
+
+    <div class="ar-overlay">
+      <div id="progress-arch" class="progress-arch" aria-label="Progres gerakan sholat"></div>
+
+      <div class="info-panel">
+        <p id="step-label" class="info-panel__label">Gerakan 1 dari 13</p>
+        <h3 id="step-name" class="info-panel__name">Takbiratul Ihram</h3>
+        <p id="step-desc" class="info-panel__desc">Memuat data gerakan&hellip;</p>
+
+        <button id="btn-toggle-panduan" class="btn btn--toggle" aria-expanded="false">
+          Lihat Panduan Gerakan
+        </button>
+        <ol id="step-panduan" class="panduan-list"></ol>
+
+        <div class="info-panel__controls">
+          <button id="btn-prev" class="btn btn--nav" aria-label="Gerakan sebelumnya">&larr; Sebelumnya</button>
+          <button id="btn-play-audio" class="btn btn--audio" disabled>Narasi belum tersedia</button>
+          <button id="btn-next" class="btn btn--nav" aria-label="Gerakan selanjutnya">Selanjutnya &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <audio id="narrator-audio" preload="none"></audio>
+  </section>
+
+  <script src="js/data-gerakan.js"></script>
+  <script type="module" src="js/ui-controller.js"></script>
+</body>
+</html>

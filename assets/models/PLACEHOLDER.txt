@@ -1,0 +1,3 @@
+Ganti folder ini dengan file karakter-sholat.glb milikmu
+(satu file .glb berisi banyak AnimationClip).
+Lihat README.md bagian "Langkah Setup" poin 2 dan 3.

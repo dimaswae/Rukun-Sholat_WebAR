@@ -1,0 +1,2 @@
+Ganti folder ini dengan file targets.mind hasil compile markermu.
+Lihat README.md bagian "Langkah Setup" poin 1.
