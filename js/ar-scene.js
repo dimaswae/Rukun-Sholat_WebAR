@@ -6,12 +6,14 @@
  * fungsi navigasi gerakan (goToStep / nextStep / prevStep) yang dipakai
  * oleh js/ui-controller.js.
  *
- * Diimpor sebagai ES module dari mindar-image-three.prod.js (lihat index.html).
+ * Bergantung pada <script type="importmap"> di index.html yang
+ * memetakan alias "three", "three/addons/", dan "mindar-image-three".
  * -----------------------------------------------------------------------
  */
 
-import { THREE, MindARThree } from "https://cdn.jsdelivr.net/npm/mindar-image-three@1.2.5/dist/mindar-image-three.prod.js";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from "three";
+import { MindARThree } from "mindar-image-three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // -------------------------------------------------------------------------
 // KONFIGURASI ASET — sesuaikan path berikut dengan file milikmu.
@@ -110,6 +112,15 @@ export async function initARScene(containerEl) {
     maxTrack: 1,
     filterMinCF: 0.0001,
     filterBeta: 0.001,
+    // Matikan UI bawaan MindAR (overlay "scanning", loading, error).
+    // Overlay bawaan ini disisipkan dengan z-index tinggi yang menutupi
+    // seluruh layar termasuk tombol kita (exit, next/prev, dsb), dan di
+    // mobile tampak sebagai balok krem solid. Kita sudah punya UI sendiri
+    // (#ar-hint) untuk memberi instruksi ke pengguna, jadi UI bawaan ini
+    // tidak diperlukan.
+    uiScanning: "no",
+    uiLoading: "no",
+    uiError: "no",
   });
 
   ({ renderer, scene, camera } = mindarThree);

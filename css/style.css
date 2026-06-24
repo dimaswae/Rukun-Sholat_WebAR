@@ -286,16 +286,25 @@ button {
 .ar-container {
   position: absolute;
   inset: 0;
-  background: #000;
+  overflow: hidden;
+  isolation: isolate; /* buat stacking context lokal agar z-index video MindAR konsisten */
 }
 
-.ar-container video,
-.ar-container canvas {
-  position: absolute;
+.ar-container video {
+  position: absolute !important;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
+  z-index: 0 !important;
+}
+
+.ar-container canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
 }
 
 .ar-hint {
