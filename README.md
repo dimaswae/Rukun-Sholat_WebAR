@@ -50,14 +50,25 @@ Sesuaikan juga `modelScale` dan `modelPositionY` di file yang sama agar
 ukuran & posisi model pas di atas marker — nilai awal (`0.05`) adalah
 estimasi umum, kemungkinan besar perlu disesuaikan ke modelmu.
 
-### 3. **PENTING** — Cocokkan nama AnimationClip
-File `js/data-gerakan.js` berisi 7 entri rukun shalat (Takbiratul Ihram,
-Berdiri/Qiyam, Rukuk, I'tidal, Sujud, Duduk di Antara Dua Sujud, Tasyahud
-Akhir — sesuai sumber `rukun-shalat.txt`), masing-masing punya field
-`clipName` yang **harus sama persis** dengan nama *AnimationClip* di
-dalam file `.glb`-mu. Setiap gerakan juga punya field `panduan` (array
-langkah-langkah) yang ditampilkan sebagai daftar di UI lewat tombol
-"Lihat Panduan Gerakan".
+### 3. **PENTING** — Cocokkan rentang waktu (startTime / endTime)
+Model `.glb` yang dipakai hanya punya **SATU AnimationClip panjang**
+(takbir → salam berurutan, tanpa potongan per-gerakan). Karena itu,
+navigasi antar-gerakan tidak memilih clip lain, melainkan menggeser
+posisi waktu (`startTime`/`endTime`, dalam detik) di dalam clip tunggal
+itu — lihat `js/ar-scene.js` fungsi `playStepRange()`.
+
+`js/data-gerakan.js` berisi 9 entri rukun shalat (Takbiratul Ihram,
+Qiyam, Rukuk, I'tidal, Sujud, Duduk di Antara Dua Sujud, Sujud Kedua,
+Tasyahud Akhir, Salam), masing-masing dengan `startTime`/`endTime` yang
+HARUS cocok dengan timing asli di model-mu. Cek durasi total clip lewat
+console log saat model dimuat:
+```
+[AR Sholat] Clip ditemukan: "Animation", durasi 38.00s.
+```
+Kalau kamu re-export model dengan timing berbeda, cukup ubah angka
+`startTime`/`endTime` di `data-gerakan.js` — tidak perlu ubah `ar-scene.js`.
+Setiap gerakan juga punya field `panduan` (array langkah-langkah) yang
+ditampilkan sebagai daftar di UI lewat tombol "Lihat Panduan Gerakan".
 
 Cara mengecek nama clip yang sebenarnya:
 1. Jalankan aplikasi, masuk ke mode AR, arahkan ke marker.
@@ -108,7 +119,7 @@ Pages) sesuai tahap *Distribution* pada MDLC di artikel.
   `crossFadeTo()` dari Three.js `AnimationMixer` agar transisi antarpose
   terlihat halus, bukan patah/instan.
 - **Progress indicator "mihrab arch"** — titik-titik di bagian bawah
-  overlay AR menunjukkan posisi gerakan ke-N dari 7 sekaligus bisa diklik
+  overlay AR menunjukkan posisi gerakan ke-N dari 9 sekaligus bisa diklik
   untuk lompat langsung ke gerakan tertentu.
 - **Tidak ada build step** — seluruh dependency (MindAR, Three.js,
   GLTFLoader) diimpor langsung dari CDN via ES module, sesuai prinsip

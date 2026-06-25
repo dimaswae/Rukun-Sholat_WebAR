@@ -2,9 +2,17 @@
  * ar-scene.js
  * -----------------------------------------------------------------------
  * Modul inti AR: inisialisasi MindAR image-tracking + Three.js rendering,
- * memuat model 3D (.glb) dengan banyak AnimationClip, dan menyediakan
- * fungsi navigasi gerakan (goToStep / nextStep / prevStep) yang dipakai
- * oleh js/ui-controller.js.
+ * memuat model 3D (.glb), dan menyediakan navigasi gerakan (goToStep /
+ * nextStep / prevStep) yang dipakai oleh js/ui-controller.js.
+ *
+ * CATATAN PENTING TENTANG ANIMASI:
+ * Model .glb yang dipakai hanya punya SATU AnimationClip panjang yang
+ * berjalan dari takbir sampai salam tanpa potongan per-gerakan. Karena
+ * itu, navigasi antar-gerakan di sini TIDAK memilih clip lain -- kita
+ * "menggeser" posisi waktu (action.time) di dalam clip tunggal itu ke
+ * rentang startTime/endTime milik gerakan yang dipilih (lihat
+ * data-gerakan.js), lalu menahannya di sana (clamp tiap frame) supaya
+ * pose tidak lanjut bermain ke gerakan berikutnya dengan sendirinya.
  *
  * Bergantung pada <script type="importmap"> di index.html yang
  * memetakan alias "three", "three/addons/", dan "mindar-image-three".
@@ -20,22 +28,26 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // -------------------------------------------------------------------------
 const CONFIG = {
   targetMindFile: "assets/targets/targets.mind", // hasil compile marker-mu
-  modelGlbFile: "assets/models/karakter-sholat.glb", // model + animation clips
-  modelScale: 0.05, // sesuaikan skala model terhadap ukuran marker
+  modelGlbFile: "assets/models/karakter-sholat.glb", // model (1 clip panjang)
+  modelScale: 0.6, // sesuaikan skala model terhadap ukuran marker -- naikkan/turunkan sampai pas
   modelPositionY: 0, // geser model relatif marker (naik/turun)
-  crossfadeDuration: 0.4, // durasi transisi halus antar-animasi (detik)
+  scrubTransitionMs: 0, // set >0 (mis. 150) kalau ingin transisi halus saat lompat antar-gerakan
 };
 
 let mindarThree = null;
 let renderer, scene, camera;
 let mixer = null;
-let currentAction = null;
-let clipsByName = {};
+let mainAction = null; // satu-satunya AnimationAction untuk clip tunggal
 let modelRoot = null;
 let anchor = null;
 
 let currentStepIndex = 0;
 const steps = window.GERAKAN_SHOLAT || [];
+
+// Batas waktu (detik) gerakan yang sedang aktif. mainAction ditahan
+// (clamp) di antara dua nilai ini setiap frame, supaya animasi tidak
+// terus berjalan melewati pose gerakan saat ini.
+let activeRange = { start: 0, end: 0 };
 
 // Callback opsional yang di-set dari ui-controller.js agar UI ikut update
 // setiap kali langkah berganti (misalnya saat marker pertama terdeteksi).
@@ -43,62 +55,68 @@ let onStepChangeCallback = null;
 let onTargetFoundCallback = null;
 let onTargetLostCallback = null;
 
-/**
- * Mencetak daftar nama AnimationClip yang benar-benar ada di file .glb
- * ke console. Pakai ini untuk mencocokkan `clipName` di data-gerakan.js
- * dengan nama asli pada model-mu.
- */
-function logAvailableClips(clips) {
-  console.log(
-    `[AR Sholat] ${clips.length} animation clip ditemukan pada model:`,
-    clips.map((c) => c.name)
-  );
-}
+const clock = new THREE.Clock();
 
 /**
- * Mencari AnimationClip berdasarkan nama, dengan fallback pencarian
- * case-insensitive / partial-match supaya sedikit lebih toleran terhadap
- * perbedaan penamaan kecil dari hasil export Blender/Mixamo.
+ * Mencetak info clip yang ditemukan di .glb ke console -- berguna untuk
+ * memverifikasi durasi total clip cocok dengan endTime gerakan terakhir
+ * di data-gerakan.js (saat ini "Salam" berakhir di detik 38).
  */
-function findClip(clipName) {
-  if (clipsByName[clipName]) return clipsByName[clipName];
-
-  const lower = clipName.toLowerCase();
-  const fallbackKey = Object.keys(clipsByName).find(
-    (key) => key.toLowerCase() === lower || key.toLowerCase().includes(lower)
-  );
-  return fallbackKey ? clipsByName[fallbackKey] : null;
-}
-
-/**
- * Memainkan animasi untuk satu tahap gerakan, dengan crossfade halus
- * dari animasi sebelumnya (jika ada).
- */
-function playStepAnimation(step) {
-  if (!mixer) return;
-
-  const clip = findClip(step.clipName);
+function logClipInfo(clip) {
   if (!clip) {
     console.warn(
-      `[AR Sholat] Clip "${step.clipName}" tidak ditemukan pada model. ` +
-        `Cek nama clip yang tersedia di console (logAvailableClips).`
+      "[AR Sholat] Tidak ada AnimationClip ditemukan pada model .glb. " +
+        "Pastikan model sudah diekspor dengan animasi (lihat README)."
     );
     return;
   }
+  console.log(
+    `[AR Sholat] Clip ditemukan: "${clip.name}", durasi ${clip.duration.toFixed(2)}s. ` +
+      `Pastikan endTime gerakan terakhir di data-gerakan.js tidak melebihi durasi ini.`
+  );
+}
 
-  const nextAction = mixer.clipAction(clip);
-  nextAction.reset();
-  nextAction.setLoop(THREE.LoopOnce, 1);
-  nextAction.clampWhenFinished = true;
+/**
+ * Menggeser posisi waktu animasi ke rentang milik satu gerakan, lalu
+ * menahannya (paused) di posisi awal rentang tersebut. Update loop
+ * (lihat initARScene) yang bertugas men-clamp tiap frame supaya tidak
+ * lanjut bermain melewati `endTime`.
+ */
+function playStepRange(step) {
+  if (!mainAction) return;
 
-  if (currentAction && currentAction !== nextAction) {
-    nextAction.play();
-    currentAction.crossFadeTo(nextAction, CONFIG.crossfadeDuration, false);
-  } else {
-    nextAction.play();
+  activeRange = { start: step.startTime, end: step.endTime };
+
+  mainAction.paused = false;
+  mainAction.enabled = true;
+  mainAction.play(); // jaga-jaga: gerakan sebelumnya mungkin sudah di-pause oleh clamp di render loop
+  mainAction.time = step.startTime;
+  mixer.update(0); // terapkan pose secara instan, tanpa menunggu frame berikutnya
+}
+
+/**
+ * DEBUG: ubah skala model secara langsung tanpa reload, supaya kamu bisa
+ * cari angka modelScale yang pas dengan cepat. Cara pakai:
+ *   - Tombol keyboard "+" / "-" saat mode AR aktif (langkah 0.02 per tekan)
+ *   - Atau lewat console: window.setModelScale(0.15)
+ * Setelah ketemu angka yang pas, salin nilainya ke CONFIG.modelScale di
+ * atas supaya jadi default permanen.
+ */
+function setModelScale(scale) {
+  if (!modelRoot) return;
+  CONFIG.modelScale = scale;
+  modelRoot.scale.setScalar(scale);
+  console.log(`[AR Sholat] modelScale = ${scale.toFixed(3)}`);
+}
+window.setModelScale = setModelScale;
+
+function handleScaleKeydown(e) {
+  if (!modelRoot) return;
+  if (e.key === "+" || e.key === "=") {
+    setModelScale(CONFIG.modelScale + 0.02);
+  } else if (e.key === "-" || e.key === "_") {
+    setModelScale(Math.max(0.01, CONFIG.modelScale - 0.02));
   }
-
-  currentAction = nextAction;
 }
 
 /**
@@ -106,6 +124,8 @@ function playStepAnimation(step) {
  * @param {HTMLElement} containerEl - elemen DOM tempat canvas AR ditempel.
  */
 export async function initARScene(containerEl) {
+  window.addEventListener("keydown", handleScaleKeydown);
+
   mindarThree = new MindARThree({
     container: containerEl,
     imageTargetSrc: CONFIG.targetMindFile,
@@ -148,16 +168,29 @@ export async function initARScene(containerEl) {
 
   renderer.setAnimationLoop(() => {
     const delta = clock.getDelta();
-    if (mixer) mixer.update(delta);
+
+    if (mixer && mainAction) {
+      mixer.update(delta);
+
+      // Tahan animasi di dalam rentang gerakan aktif. Begitu waktu
+      // melewati endTime, freeze pose tepat di endTime (pose akhir
+      // gerakan ini) -- bukan lanjut ke gerakan berikutnya dengan
+      // sendirinya, dan bukan loncat balik ke start (yang akan terlihat
+      // seperti "patah" berulang).
+      if (mainAction.time >= activeRange.end) {
+        mainAction.time = activeRange.end;
+        mainAction.paused = true;
+        mixer.update(0);
+      }
+    }
+
     renderer.render(scene, camera);
   });
 }
 
-const clock = new THREE.Clock();
-
 /**
- * Memuat model .glb, menyiapkan AnimationMixer, lalu langsung memainkan
- * animasi untuk langkah pertama (Takbiratul Ihram).
+ * Memuat model .glb, menyiapkan AnimationMixer untuk clip tunggal, lalu
+ * langsung menahan pose di langkah pertama (Takbiratul Ihram).
  */
 function loadModel() {
   return new Promise((resolve, reject) => {
@@ -171,14 +204,19 @@ function loadModel() {
         anchor.group.add(modelRoot);
 
         mixer = new THREE.AnimationMixer(modelRoot);
-        clipsByName = {};
-        gltf.animations.forEach((clip) => {
-          clipsByName[clip.name] = clip;
-        });
-        logAvailableClips(gltf.animations);
 
-        if (steps.length > 0) {
-          playStepAnimation(steps[currentStepIndex]);
+        const clip = gltf.animations[0] || null;
+        logClipInfo(clip);
+
+        if (clip) {
+          mainAction = mixer.clipAction(clip);
+          mainAction.setLoop(THREE.LoopOnce, 1);
+          mainAction.clampWhenFinished = true;
+          mainAction.play();
+        }
+
+        if (steps.length > 0 && mainAction) {
+          playStepRange(steps[currentStepIndex]);
         }
 
         resolve();
@@ -196,7 +234,7 @@ function loadModel() {
 export function goToStep(index) {
   if (index < 0 || index >= steps.length) return;
   currentStepIndex = index;
-  playStepAnimation(steps[currentStepIndex]);
+  playStepRange(steps[currentStepIndex]);
   if (typeof onStepChangeCallback === "function") {
     onStepChangeCallback(steps[currentStepIndex], currentStepIndex);
   }
@@ -232,6 +270,7 @@ export function setOnTargetLost(callback) {
 
 /** Menghentikan kamera & render loop, dipanggil saat keluar dari mode AR. */
 export function stopARScene() {
+  window.removeEventListener("keydown", handleScaleKeydown);
   if (mindarThree) {
     renderer.setAnimationLoop(null);
     mindarThree.stop();

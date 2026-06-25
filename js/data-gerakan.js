@@ -2,15 +2,18 @@
  * data-gerakan.js
  * -----------------------------------------------------------------------
  * Single source of truth untuk rangkaian gerakan (rukun) sholat.
- * Sumber teks: rukun-shalat.txt (Deskripsi Gerakan + Doa Gerakan digabung
- * ke `deskripsi`; Panduan Gerakan dipecah ke `panduan` sebagai list langkah).
  *
- * PENTING UNTUK DIISI SESUAI ASET-MU:
- *   - clipName  -> HARUS sama persis dengan nama AnimationClip di file .glb
- *                  (cek nama clip lewat console log saat model dimuat,
- *                   lihat js/ar-scene.js -> logAvailableClips()).
- *   - audioSrc  -> path file audio narasi (mp3/ogg). Boleh dikosongkan
- *                  (null) dulu jika belum punya, aplikasi tetap berjalan.
+ * PENTING: file .glb yang dipakai HANYA punya SATU AnimationClip panjang
+ * (takbir -> salam berurutan tanpa potongan). Jadi navigasi antar-gerakan
+ * di sini TIDAK memilih clip lain, melainkan men-scrub posisi waktu
+ * (`startTime` / `endTime`, dalam detik) di dalam clip tunggal itu.
+ * Lihat js/ar-scene.js -> playStepRange().
+ *
+ * Kalau kamu re-export model dengan timing berbeda, cukup ubah angka
+ * startTime/endTime di bawah -- tidak perlu ubah ar-scene.js.
+ *
+ *   - audioSrc -> path file audio narasi (mp3/ogg). Boleh dikosongkan
+ *                 (null) dulu jika belum punya, aplikasi tetap berjalan.
  *
  * Urutan array = urutan navigasi Next/Previous pada UI.
  * -----------------------------------------------------------------------
@@ -31,7 +34,8 @@ const GERAKAN_SHOLAT = [
       "Ucapkan takbir sambil mengangkat tangan.",
       "Setelah tangan turun, letakkan tangan kanan di atas tangan kiri di dada.",
     ],
-    clipName: "Takbiratul_Ihram",
+    startTime: 0,
+    endTime: 2.2,
     audioSrc: null, // contoh nanti: "assets/audio/01-takbiratul-ihram.mp3"
   },
   {
@@ -47,7 +51,8 @@ const GERAKAN_SHOLAT = [
       "Pandangan tertuju ke tempat sujud.",
       "Membaca Al-Fatihah.",
     ],
-    clipName: "Qiyam",
+    startTime: 2.3,
+    endTime: 2.5,
     audioSrc: null,
   },
   {
@@ -64,7 +69,8 @@ const GERAKAN_SHOLAT = [
       "Siku direnggangkan dari badan.",
       "Pandangan ke tempat sujud.",
     ],
-    clipName: "Rukuk",
+    startTime: 2.6,
+    endTime: 5.4,
     audioSrc: null,
   },
   {
@@ -80,7 +86,8 @@ const GERAKAN_SHOLAT = [
       "Berdiri tegak sempurna.",
       "Tangan kembali lurus di samping badan.",
     ],
-    clipName: "Itidal",
+    startTime: 5.6,
+    endTime: 8.0,
     audioSrc: null,
   },
   {
@@ -99,7 +106,8 @@ const GERAKAN_SHOLAT = [
       "Ujung jari kaki menghadap kiblat.",
       "Tujuh anggota sujud menyentuh lantai: dahi, hidung, dua telapak tangan, dua lutut, dua ujung kaki.",
     ],
-    clipName: "Sujud",
+    startTime: 8.1,
+    endTime: 9.9,
     audioSrc: null,
   },
   {
@@ -118,11 +126,29 @@ const GERAKAN_SHOLAT = [
       "Kedua tangan diletakkan di atas paha.",
       "Pandangan ke arah tempat sujud.",
     ],
-    clipName: "Duduk_Iftirasy",
+    startTime: 10,
+    endTime: 12,
     audioSrc: null,
   },
   {
     id: 7,
+    nama: "Sujud Kedua",
+    deskripsi:
+      "Mengulangi posisi sujud sebagai penutup rakaat, dengan ketentuan dan doa yang sama seperti sujud pertama. " +
+      "Doa: \u0633ُبْحَانَ رَبِّيَ الأَعْلَى وَبِحَمْدِهِ (Subhaana Rabbiyal A'laa wa bihamdih) \u2014 " +
+      "artinya: Maha Suci Tuhanku Yang Maha Tinggi dan segala puji bagi-Nya.",
+    panduan: [
+      "Bangkit dari duduk di antara dua sujud.",
+      "Letakkan kembali dahi, hidung, dan kedua telapak tangan ke tempat sujud.",
+      "Tujuh anggota sujud menyentuh lantai: dahi, hidung, dua telapak tangan, dua lutut, dua ujung kaki.",
+      "Pandangan ke tempat sujud.",
+    ],
+    startTime: 12.1,
+    endTime: 14,
+    audioSrc: null,
+  },
+  {
+    id: 8,
     nama: "Tasyahud Akhir",
     deskripsi:
       "Posisi duduk pada rakaat terakhir untuk membaca tasyahud dan shalawat. " +
@@ -135,7 +161,22 @@ const GERAKAN_SHOLAT = [
       "Tangan kanan di atas paha kanan.",
       "Telunjuk kanan diangkat saat membaca syahadat.",
     ],
-    clipName: "Tasyahud_Akhir",
+    startTime: 30,
+    endTime: 34.5,
+    audioSrc: null,
+  },
+  {
+    id: 9,
+    nama: "Salam",
+    deskripsi:
+      "Menolehkan wajah ke kanan lalu ke kiri sambil mengucapkan salam sebagai penutup rangkaian sholat.",
+    panduan: [
+      "Tetap dalam posisi duduk tawarruk.",
+      "Tolehkan wajah ke kanan sambil mengucapkan salam.",
+      "Tolehkan wajah ke kiri sambil mengucapkan salam.",
+    ],
+    startTime: 34.6,
+    endTime: 38,
     audioSrc: null,
   },
 ];

@@ -46,6 +46,7 @@ const els = {
 };
 
 let arInitialized = false;
+let isInitializing = false; // guard sinkron: cegah klik ganda memicu initARScene() paralel
 
 function showScreen(name) {
   Object.entries(screens).forEach(([key, el]) => {
@@ -119,6 +120,11 @@ function renderStepInfo(step, index) {
 }
 
 async function enterARMode() {
+  // Cegah klik berulang (mis. double-click tak sengaja) memicu lebih dari
+  // satu inisialisasi MindAR/Three.js secara paralel, yang sebelumnya
+  // menyebabkan beberapa <canvas>/<video> menumpuk di DOM.
+  if (isInitializing) return;
+
   showScreen("ar");
   buildProgressArch();
 
@@ -131,6 +137,7 @@ async function enterARMode() {
   });
 
   if (!arInitialized) {
+    isInitializing = true;
     try {
       await initARScene(els.arContainer);
       arInitialized = true;
@@ -140,6 +147,8 @@ async function enterARMode() {
       els.arHint.textContent =
         "Gagal memuat kamera atau model 3D. Pastikan izin kamera diberikan dan periksa console untuk detail.";
       els.arHint.classList.remove("ar-hint--hidden");
+    } finally {
+      isInitializing = false;
     }
   } else {
     renderStepInfo(steps[getCurrentStepIndex()], getCurrentStepIndex());
