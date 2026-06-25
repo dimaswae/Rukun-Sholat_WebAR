@@ -290,14 +290,12 @@ button {
   isolation: isolate; /* buat stacking context lokal agar z-index video MindAR konsisten */
 }
 
-.ar-container video {
-  position: absolute !important;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-  z-index: 0 !important;
-}
+/* Video MindAR diatur posisinya lewat inline style oleh library itu
+   sendiri (emulasi object-fit:cover dengan kalkulasi width/height/left/top
+   manual). JANGAN override width/height/position di sini -- itu akan
+   merusak kalkulasi tersebut dan membuat video "salah tempat" (sebagian
+   area jadi kosong/transparan, menampakkan background body di
+   belakangnya). #ar-container sudah overflow:hidden untuk crop rapi. */
 
 .ar-container canvas {
   position: absolute !important;
