@@ -36,7 +36,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 0,
     endTime: 2.2,
-    audioSrc: null, // contoh nanti: "assets/audio/01-takbiratul-ihram.mp3"
+    audioSrc: "assets/audio/Takbiratul-Ihram-dan-doa-iftitah.mp3",
   },
   {
     id: 2,
@@ -51,9 +51,9 @@ const GERAKAN_SHOLAT = [
       "Pandangan tertuju ke tempat sujud.",
       "Membaca Al-Fatihah.",
     ],
+    audioSrc: "assets/audio/Alfathihah-amin.mp3",
     startTime: 2.3,
     endTime: 2.5,
-    audioSrc: null,
   },
   {
     id: 3,
@@ -71,7 +71,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 2.6,
     endTime: 5.4,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-rukuu.mp3",
   },
   {
     id: 4,
@@ -88,7 +88,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 5.6,
     endTime: 8.0,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-itidal.mp3",
   },
   {
     id: 5,
@@ -108,7 +108,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 8.1,
     endTime: 9.9,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-sujud.mp3",
   },
   {
     id: 6,
@@ -128,7 +128,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 10,
     endTime: 12,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-duduk-antara-duasujud.mp3",
   },
   {
     id: 7,
@@ -145,7 +145,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 12.1,
     endTime: 14,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-sujud.mp3",
   },
   {
     id: 8,
@@ -163,7 +163,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 30,
     endTime: 34.5,
-    audioSrc: null,
+    audioSrc: "assets/audio/doa-tasyahud-akhir.mp3",
   },
   {
     id: 9,
@@ -177,7 +177,7 @@ const GERAKAN_SHOLAT = [
     ],
     startTime: 34.6,
     endTime: 38,
-    audioSrc: null,
+    audioSrc: "assets/audio/salam.mp3",
   },
 ];
 
